@@ -136,7 +136,7 @@ export default class Repository {
             for (let data of objectsList) {
                 bindedDatas.push(this.model.bindExtraData(data));
             };
-        return bindedDatas;
+        return bindedDatas; // Remplacer par résultat de méthode de CollectionData.Méthode(binddata, querystrings)
     }
     get(id) {
         for (let object of this.objects()) {
