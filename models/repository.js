@@ -129,14 +129,17 @@ export default class Repository {
         }
         return false;
     }
-    getAll() {
+    getAll(params = null) {
+        // Todo Labo 4
+        // let collectionFilter = new CollectionFilter(this.objects(), params, this.model);
+        // let objectsList = collectionFilter.get();
         let objectsList = this.objects();
         let bindedDatas = [];
         if (objectsList)
             for (let data of objectsList) {
                 bindedDatas.push(this.model.bindExtraData(data));
             };
-        return bindedDatas; // Remplacer par résultat de méthode de CollectionData.Méthode(binddata, querystrings)
+        return bindedDatas;
     }
     get(id) {
         for (let object of this.objects()) {
