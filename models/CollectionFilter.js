@@ -8,82 +8,60 @@ export default class CollectionFilter {
 
 
   filterData() {
-    log(FgRed, "testUN");
     let filteredData = this.object;
     if (this.params != null) {
-      log(FgRed, "testDEUX");
-      
       for (const param in this.params) {
         const paramLower = param.toLowerCase(); // Convert param to lowercase
-  
-        // Obtenez la liste des clés (champs) du modèle
-        const modelKeys = Object.keys(this.object[0]);
-  
-        if (modelKeys.includes(paramLower)) {
-          const filterValue = this.params[param];
-          if (filterValue.startsWith('*') && filterValue.endsWith('*')) {
-            // Contient "a"
-            const searchValue = filterValue.slice(1, -1);
-            filteredData = filteredData.filter(item => item[paramLower].toLowerCase().includes(searchValue.toLowerCase()));
-          } else if (filterValue.startsWith('*')) {
-            // Termine par "a"
-            const searchValue = filterValue.slice(1);
-            filteredData = filteredData.filter(item => item[paramLower].toLowerCase().endsWith(searchValue.toLowerCase()));
-          } else if (filterValue.endsWith('*')) {
-            // Commence par "a"
-            const searchValue = filterValue.slice(0, -1);
-            filteredData = filteredData.filter(item => item[paramLower].toLowerCase().startsWith(searchValue.toLowerCase()));
-          } else {
-            // Égal à "a"
-            filteredData = filteredData.filter(item => item[paramLower].toLowerCase() === filterValue.toLowerCase());
+        let objectList = this.object;
+        let objectKeys = Object.keys(objectList[0]);
+        for (let key of objectKeys) {
+          if (paramLower === key.toLowerCase()) {
+            let searchString = this.params[param].toLowerCase();
+            filteredData = filteredData.filter((object) => this.valueMatch(object[key], searchString));
           }
-        } else if (param === 'Category') {
-          // Filtrer par catégorie
-          const filterValue = this.params[param];
-          filteredData = filteredData.filter(item => item.Category.toLowerCase() === filterValue.toLowerCase());
         }
+        /*if (paramLower === 'sort') {
+          // Gérer la logique de tri*/
+          //let sort_args = this.params[param].split(',');
+          const [sortField, sortOrder] =  this.params[param].split(',');
+          //let sortField = sort_args[0];
+          const order = sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1;
+          if (sortField in objectList[0]) {
+            this.object = this.object.sort((a, b) => (a[sortField] < b[sortField] ? -order : order));
+            log(FgRed, "TEST");
+            this.object = filteredData;
+            return this.object;
+          }
+        //}
       }
     }
-  
     // Mettez à jour this.object avec les données filtrées
     this.object = filteredData;
   
     return this.object;
   }
-  
+
 
   sortData() {
-    log(FgRed, "test11");
-    if (this.params != null) {
-      const sortKey = Object.keys(this.params).find(key => key.toLowerCase() === 'sort');
-      if (sortKey) {
-        log(FgRed, "test22");
-        const sortObject = this.params[sortKey].toLowerCase();
-        const [sortField, sortOrder] = sortObject.split(',');
-
-        // Vérifiez d'abord si sortOrder existe, puis convertissez en minuscules
-        const order = sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1;
-
-        log(FgRed, sortField);
-        const objectList = this.object;
-        if (sortField in objectList[0]) {
-          this.object = this.object.sort((a, b) => (a[sortField] < b[sortField] ? -order : order));
-        }
+    if (this.params.sort != null && this.object && this.object.length > 0) {
+      const [sortField, sortOrder] = this.params.sort.split(',');
+      
+      // Vérifiez d'abord si sortOrder existe, puis convertissez en minuscules
+      const order = sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1;
+      
+      log(FgRed, sortField);
+      let objectList = this.object;
+      if (sortField in objectList[0]) {
+        this.object = this.object.sort((a, b) => (a[sortField] < b[sortField] ? -order : order));
       }
     }
-
+  
     return this.object;
-}
-
-
-  
-  
+  }
   
 
   paginateData() {
-    log(FgRed, "test11");
     if (this.params.limit != null && this.params.offset != null) {
-      log(FgRed, "test22");
       const limit = parseInt(this.params.limit, 10);
       const offset = parseInt(this.params.offset, 10);
       this.object = this.object.slice(offset, offset + limit);
@@ -93,7 +71,7 @@ export default class CollectionFilter {
   }
 
   selectFields() {
-    if (this.params.field != null) {
+    if (this.params.field != null && this.object && this.object.length > 0) {
       const fieldsToSelect = this.params.field.split(',');
   
       if (fieldsToSelect.includes('Category')) {
@@ -118,14 +96,34 @@ export default class CollectionFilter {
     return this.object;
   }
 
+  valueMatch(value, searchValue) {
+    try {
+      let exp = '^' + searchValue.toLowerCase().replace(/\*/g, '.*') + '$';
+      return new RegExp(exp).test(value.toString().toLowerCase());
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  }
+  compareNum(x, y) {
+    if (x === y) return 0;
+    else if (x < y) return -1;
+    return 1;
+  }
+  innerCompare(x, y) {
+    if ((typeof x) === 'string')
+    return x.localeCompare(y);
+    else
+    return this.compareNum(x, y);
+  }
+
   get() {
     log(FgMagenta, "GET");
     const paramsLower = Object.keys(this.params).map(key => key.toLowerCase());
-
+    log(FgMagenta, paramsLower);
     this.filterData();
 
     if (paramsLower.includes('sort')) {
-      log(FgMagenta, "NORMAL");
       this.sortData();
     }
 
@@ -138,6 +136,7 @@ export default class CollectionFilter {
     }
 
     return this.object;
+    
   }
   
   
