@@ -70,7 +70,7 @@ export default class CollectionFilter {
   
       this.object.forEach(item => {
         fieldsToSelect.forEach(field => {
-          if (item[field] !== undefined) {
+          if (item[field] !== undefined || item[field] !== null) {
             if (!uniqueValues[field]) {
               uniqueValues[field] = new Set();
             }
