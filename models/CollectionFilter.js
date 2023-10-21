@@ -20,24 +20,17 @@ export default class CollectionFilter {
             filteredData = filteredData.filter((object) => this.valueMatch(object[key], searchString));
           }
         }
-        /*if (paramLower === 'sort') {
-          // Gérer la logique de tri*/
-          //let sort_args = this.params[param].split(',');
-          const [sortField, sortOrder] =  this.params[param].split(',');
-          //let sortField = sort_args[0];
-          const order = sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1;
-          if (sortField in objectList[0]) {
-            this.object = this.object.sort((a, b) => (a[sortField] < b[sortField] ? -order : order));
-            log(FgRed, "TEST");
-            this.object = filteredData;
-            return this.object;
-          }
-        //}
+        const [sortField, sortOrder] = this.params[param].split(',');
+        const order = sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1;
+        if (sortField in objectList[0]) {
+          this.object = this.object.sort((a, b) => (a[sortField] < b[sortField] ? -order : order));
+          this.object = filteredData;
+          return this.object;
+        }
       }
     }
-    // Mettez à jour this.object avec les données filtrées
     this.object = filteredData;
-  
+
     return this.object;
   }
 
@@ -45,20 +38,19 @@ export default class CollectionFilter {
   sortData() {
     if (this.params.sort != null && this.object && this.object.length > 0) {
       const [sortField, sortOrder] = this.params.sort.split(',');
-      
-      // Vérifiez d'abord si sortOrder existe, puis convertissez en minuscules
+
       const order = sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1;
-      
-      log(FgRed, sortField);
+
+      log(FgGreen, sortField);
       let objectList = this.object;
       if (sortField in objectList[0]) {
         this.object = this.object.sort((a, b) => (a[sortField] < b[sortField] ? -order : order));
       }
     }
-  
+
     return this.object;
   }
-  
+
 
   paginateData() {
     if (this.params.limit != null && this.params.offset != null) {
@@ -70,31 +62,34 @@ export default class CollectionFilter {
     return this.object;
   }
 
+
   selectFields() {
     if (this.params.field != null && this.object && this.object.length > 0) {
       const fieldsToSelect = this.params.field.split(',');
+      const uniqueValues = {};
   
-      if (fieldsToSelect.includes('Category')) {
-        // Vérifiez si 'Category' est inclus dans les champs sélectionnés
-        const categories = this.object.map(item => item.Category);
-        const uniqueCategories = [...new Set(categories)];
-  
-        this.object = uniqueCategories.map(category => ({ Category: category }));
-      } else {
-        this.object = this.object.map(item => {
-          const selectedFields = {};
-          fieldsToSelect.forEach(field => {
-            if (item[field] !== undefined) {
-              selectedFields[field] = item[field];
+      this.object.forEach(item => {
+        fieldsToSelect.forEach(field => {
+          if (item[field] !== undefined) {
+            if (!uniqueValues[field]) {
+              uniqueValues[field] = new Set();
             }
-          });
-          return selectedFields;
+            uniqueValues[field].add(item[field]);
+          }
         });
-      }
+      });
+  
+      const fieldObjects = {};
+      fieldsToSelect.forEach(field => {
+        fieldObjects[field] = [...uniqueValues[field]].map(value => ({ [field]: value }));
+      });
+  
+      this.object = fieldsToSelect.flatMap(field => fieldObjects[field]);
     }
   
     return this.object;
   }
+  
 
   valueMatch(value, searchValue) {
     try {
@@ -105,40 +100,44 @@ export default class CollectionFilter {
       return false;
     }
   }
+
   compareNum(x, y) {
     if (x === y) return 0;
     else if (x < y) return -1;
     return 1;
   }
+  
   innerCompare(x, y) {
     if ((typeof x) === 'string')
-    return x.localeCompare(y);
+      return x.localeCompare(y);
     else
-    return this.compareNum(x, y);
+      return this.compareNum(x, y);
   }
 
   get() {
     log(FgMagenta, "GET");
-    const paramsLower = Object.keys(this.params).map(key => key.toLowerCase());
-    log(FgMagenta, paramsLower);
-    this.filterData();
+    let nbrParams = Object.keys(this.params).length;
 
-    if (paramsLower.includes('sort')) {
-      this.sortData();
+    if (nbrParams == 0) { // Aucun paramètre
+      return this.object;
+    } else {
+      const paramsLower = Object.keys(this.params).map(key => key.toLowerCase());
+      log(FgMagenta, paramsLower);
+      this.filterData(); // Filtrer
+
+      if (paramsLower.includes('sort')) { // Sort
+        this.sortData();
+      }
+
+      if (paramsLower.includes('limit') || paramsLower.includes('offset')) { //limit ou offset
+        this.paginateData();
+      }
+
+      if (paramsLower.includes('field')) { // field
+        this.selectFields();
+      }
+
+      return this.object;
     }
-
-    if (paramsLower.includes('limit') || paramsLower.includes('offset')) {
-      this.paginateData();
-    }
-
-    if (paramsLower.includes('field')) {
-      this.selectFields();
-    }
-
-    return this.object;
-    
   }
-  
-  
-  
 }
