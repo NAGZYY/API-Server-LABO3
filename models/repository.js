@@ -131,20 +131,24 @@ export default class Repository {
         return false;
     }
     getAll(params = null) {
-        let objectsList =  this.objects();;
-        if (params == null) {
-            objectsList = this.objects();
-        } else {
-            let collectionFilter = new CollectionFilter(this.objects(), params, this.model);
-            objectsList = collectionFilter.get();
+        const normalizedParams = {};
+        if (params) {
+          for (const key in params) {
+            normalizedParams[key.toLowerCase()] = params[key];
+          }
         }
-        let bindedDatas = [];
-        if (objectsList)
-            for (let data of objectsList) {
-                bindedDatas.push(this.model.bindExtraData(data));
-            };
+      
+        let objectsList;
+        if (normalizedParams == null) {
+          objectsList = this.objects();
+        } else {
+          const collectionFilter = new CollectionFilter(this.objects(), normalizedParams, this.model);
+          objectsList = collectionFilter.get();
+        }
+      
+        const bindedDatas = objectsList ? objectsList.map(data => this.model.bindExtraData(data)) : [];
         return bindedDatas;
-    }
+      }
     get(id) {
         for (let object of this.objects()) {
             if (object.Id === id) {

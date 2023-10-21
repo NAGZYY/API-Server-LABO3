@@ -53,7 +53,7 @@ export default class CollectionFilter {
 
 
   paginateData() {
-    if (this.params.limit != null && this.params.offset != null) {
+    if (this.params.limit != null && this.params.offset != null && this.object && this.object.length > 0) {
       const limit = parseInt(this.params.limit, 10);
       const offset = parseInt(this.params.offset, 10);
       this.object = this.object.slice(offset, offset + limit);
@@ -132,7 +132,7 @@ export default class CollectionFilter {
       if (paramsLower.includes('limit') || paramsLower.includes('offset')) { //limit ou offset
         this.paginateData();
       }
-
+      log(FgMagenta, paramsLower);
       if (paramsLower.includes('field')) { // field
         this.selectFields();
       }
